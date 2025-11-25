@@ -1,9 +1,29 @@
+/**
+ * Spatial Prisoner's Dilemma Simulation
+ *
+ * This program simulates the evolution of cooperation on a 2D grid where agents
+ * interact with their nearest neighbors using the Prisoner's Dilemma game.
+ *
+ * Key features:
+ * - Spatial structure (n x n grid with periodic boundaries)
+ * - Von Neumann neighborhood (4 nearest neighbors)
+ * - Fermi-Dirac strategy adoption rule
+ * - Outputs grid snapshots and cooperation frequency
+ *
+ * Outputs:
+ * - COOP_FREQ_B_[b]__C_[c].txt - cooperation frequency over time
+ * - INITIAL_MATRIX_B_[b]__C_[c].txt - initial grid configuration
+ * - FINAL_MATRIX_B_[b]__C_[c].txt - final grid state
+ *
+ * College project - for educational purposes
+ */
+
 #include<stdio.h>
 #include<math.h>
 #include <stdlib.h>
 #include <time.h>
 
-//Tamanho da população da matriz n x n
+//Tamanho da população da matriz n x n (Population size: n x n grid)
 #define n_ 50
 
 double sum_matrix(int matrix[][n_],int n);
@@ -22,16 +42,16 @@ void main()
     k = 0.1;
     n = n_;
 
-    //Beneficio em cooperar
+    // Beneficio em cooperar (Benefit of cooperation)
     b = 2;
 
-    //Custo em cooperar
+    // Custo em cooperar (Cost of cooperation)
     c = 1;
 
-    //Numero de geracoes
+    // Numero de geracoes (Number of generations)
     gen_num = 1000;
 
-    //Frequencia de cooperadores inicialmente
+    // Frequencia de cooperadores inicialmente (Initial cooperation frequency)
     freq_coop = 0.5;
 
     double ratio = c / (b-c);
@@ -65,17 +85,13 @@ double PD_DILEMMA(double b, double c, double k, int n, int gen_num, double freq_
 
     num_compet = gen_num * n;
 
-    //reward
-    R = b-c;
+    // Prisoner's Dilemma Payoff Matrix
+    // Rows/Cols: [0] = Defect, [1] = Cooperate
 
-    //temptation
-    T = b;
-
-    //sucker's payoff
-    S = -c;
-
-    //punishment
-    P = 0;
+    R = b-c;    // Reward for mutual cooperation
+    T = b;      // Temptation to defect
+    S = -c;     // Sucker's payoff
+    P = 0;      // Punishment for mutual defection
 
     payoff_matrix[0][0] = P;
 
@@ -87,7 +103,8 @@ double PD_DILEMMA(double b, double c, double k, int n, int gen_num, double freq_
 
 
 
-    // 0  for defectors
+    // Initialize grid: 0 = defector, 1 = cooperator
+    // Randomly assign strategies based on initial cooperation frequency
     for(i = 0; i < n; i++)
     {
         for(j = 0; j < n; j++)
@@ -95,9 +112,9 @@ double PD_DILEMMA(double b, double c, double k, int n, int gen_num, double freq_
             double temp = rand() / (RAND_MAX + 1.0);
 
             if(temp < freq_coop)
-                pop[i][j] = 1;
+                pop[i][j] = 1;    // Cooperator
             else
-                pop[i][j] = 0;
+                pop[i][j] = 0;    // Defector
         }
     }
 
@@ -122,12 +139,16 @@ double PD_DILEMMA(double b, double c, double k, int n, int gen_num, double freq_
 
 
 
+    // Main evolution loop
     for(i = 1; i <= num_compet; i++)
     {
-        int x[2],y[2];
+        // Select random agent (x) and a random neighbor (y)
+        int x[2],y[2];  // x[0] = row, x[1] = col
         x[0] = (n) * rand() / (RAND_MAX + 1.0) ;
         x[1] = (n) * rand() / (RAND_MAX + 1.0) ;
 
+        // Calculate Von Neumann neighborhood (4 nearest neighbors)
+        // with periodic boundary conditions
         int vizin[4][2];
 
         if(x[0] == 0)
@@ -176,6 +197,7 @@ double PD_DILEMMA(double b, double c, double k, int n, int gen_num, double freq_
             vizin[3][1] = x[1]+1;
         }
 
+        // Calculate total payoff for agent x by playing with all 4 neighbors
         p1=0;
         for(int l = 0; l < 4; l++)
         {
@@ -184,6 +206,7 @@ double PD_DILEMMA(double b, double c, double k, int n, int gen_num, double freq_
 
 
 
+        // Select one random neighbor as the model agent
         int temp = 4 * rand() / (RAND_MAX + 1.0);
 
         y[0] = vizin[temp][0];
@@ -236,13 +259,15 @@ double PD_DILEMMA(double b, double c, double k, int n, int gen_num, double freq_
         }
 
 
+        // Calculate total payoff for neighbor y
         p2=0;
         for(int l = 0; l < 4; l++)
         {
             p2 += payoff_matrix[pop[y[0]][y[1]]][pop[vizin[l][0]][vizin[l][1]]];
         }
 
-        //Competir para ver se p1 assume a estrategia de p2
+        // Compete: agent x may adopt agent y's strategy
+        // Using Fermi-Dirac probability function
         w = fermi_dirac(p1, p2, k);
 
         if(w >= (rand() / (RAND_MAX + 1.0) ))
@@ -295,6 +320,17 @@ double sum_matrix(int matrix[][n_],int n)
 
 }
 
+/**
+ * Fermi-Dirac probability function
+ *
+ * Calculates the probability that agent 1 adopts agent 2's strategy
+ * based on their payoff difference.
+ *
+ * @param p1 Payoff of agent 1
+ * @param p2 Payoff of agent 2
+ * @param k  Selection intensity (temperature parameter)
+ * @return Probability in range [0, 1]
+ */
 double fermi_dirac(double p1, double p2, double k)
 {
     double f;

@@ -50,3 +50,11 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Simulation output files
+*.txt
+!README.txt
+
+# Compiled binaries from this project
+non_spatial
+spatial
